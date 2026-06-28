@@ -19,6 +19,7 @@ class AccountResource extends JsonResource
         $totalExpense = (int) ($this->total_expense ?? 0);
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'type' => $this->type,
             'initial_balance' => $initialBalance,

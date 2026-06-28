@@ -27,15 +27,15 @@ class AccountRequest extends FormRequest
                 'name' => 'required',
                 'type' => 'required|in:cash,bank,ewallet',
                 'initial_balance' => 'required|numeric',
-                'is_active' => 'required|boolean',
+                'is_active' => 'boolean',
             ];
         }
-        elseif($this->isMethod('PATCH') || $this->isMethod('PUT')){
+        if($this->isMethod('PATCH') || $this->isMethod('PUT')){
             return [
-                'name' => 'nullable',
-                'type'=> 'in:cash,bank,ewallet',
-                'initial_balance' => 'numeric',
-                'is_active' => 'boolean'
+                'name' => 'sometimes',
+                'type'=> 'sometimes|in:cash,bank,ewallet',
+                'initial_balance' => 'sometimes|numeric',
+                'is_active' => 'sometimes|boolean'
             ];
         }
         else{

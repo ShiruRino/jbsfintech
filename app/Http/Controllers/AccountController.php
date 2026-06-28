@@ -18,6 +18,7 @@ class AccountController extends Controller
         $accounts = $request->user()
             ->accounts()
             ->select([
+                'id',
                 'name',
                 'type',
                 'initial_balance',
@@ -56,7 +57,7 @@ class AccountController extends Controller
             'initial_balance' => $request->validated('initial_balance'),
             'is_active' => $request->validated('is_active') ?? true,
         ]);
-        return $this->sendResponse($account,'Account registered successfully', 201);
+        return $this->sendResponse(new AccountResource($account),'Account registered successfully', 201);
     }
 
     /**
@@ -80,7 +81,7 @@ class AccountController extends Controller
     public function update(AccountRequest $request, Account $account)
     {
         $account->update($request->validated());
-        return $this->sendResponse($account, 'Account updated successfully');
+        return $this->sendResponse(new AccountResource($account), 'Account updated successfully');
     }
 
     /**
