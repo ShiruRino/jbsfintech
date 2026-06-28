@@ -19,8 +19,8 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories', 'id')->onDelete('cascade');
             $table->enum('type', ['income', 'expense']);
             $table->bigInteger('amount');
-            $table->date('transaction_date')->default(DB::raw('(CURRENT_DATE)'));
-            $table->text('note');
+            $table->date('transaction_date');
+            $table->text('note')->nullable();
             $table->string('attachment_path')->nullable();
             $table->softDeletes();
             $table->timestamps();
