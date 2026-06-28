@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AccountRequest;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -61,25 +62,25 @@ class AccountController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Account $account)
+    public function show(Account $account, Request $request)
     {
-        
+        if($account->user_id != $request->user()->id){
+            throw new AuthorizationException();
+        }
+        $data = [];
+        $data['account'] = new AccountResource($account);
+        $data['latest_transactions'] = $account->transactions()->latest()->limit(3);
+        return $this->sendResponse($data, 'Account retrieved successfully'); 
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Account $account)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Account $account)
+    public function update(AccountRequest $request, Account $account)
     {
-        //
+        $account->update($request->validated());
+        return $this->sendResponse($account, 'Account updated successfully');
     }
 
     /**
@@ -87,6 +88,8 @@ class AccountController extends Controller
      */
     public function destroy(Account $account)
     {
-        //
+        $account->transactions()->delete();
+        $account->delete();
+        return $this->sendResponse(null, 'Account and related transactions successfully deleted');
     }
 }
