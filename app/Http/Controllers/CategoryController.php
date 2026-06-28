@@ -25,8 +25,14 @@ class CategoryController extends Controller
      */
     public function store(CategoryRequest $request)
     {
-        $category = Category::create($request->validated());
-        return $this->sendResponse(new CategoryResource($category), 'Category added successfully');
+        $category = Category::create([
+            'user_id' => $request->user()->id,
+            'name' => $request->validated('name'),
+            'type' => $request->validated('type'),
+            'icon' => $request->validated('icon') ?? null,
+            'is_active'=> $request->validated('is_active') ?? true,
+        ]);
+        return $this->sendResponse(new CategoryResource($category), 'Category added successfully',201);
     }
 
     /**
@@ -39,29 +45,31 @@ class CategoryController extends Controller
         }
         $data['category'] = new CategoryResource($category);
         $data['latest_transactions'] = $category->transactions()->where('user_id', $request->user()->id)->latest()->limit(3)->get();
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Category $category)
-    {
-        //
+        return $this->sendResponse($data,'Category retrieved successfully');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(CategoryRequest $request, Category $category)
     {
-        //
+        if($category->user_id != $request->user()->id){
+            throw new AuthorizationException();
+        }
+        $category->update($request->validated());
+        return $this->sendResponse(new CategoryResource($category),'Category updated successfully');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category)
+    public function destroy(Category $category, Request $request)
     {
-        //
+        if($category->user_id != $request->user()->id){
+            throw new AuthorizationException();
+        }
+        $category->transactions()->delete();
+        $category->delete();
+        return $this->sendResponse(null, 'Category and transactions related deleted successfully');
     }
 }
