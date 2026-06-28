@@ -81,6 +81,9 @@ class AccountController extends Controller
      */
     public function update(AccountRequest $request, Account $account)
     {
+        if($account->user_id != $request->user()->id){
+            throw new AuthorizationException();
+        }
         $account->update($request->validated());
         return $this->sendResponse(new AccountResource($account), 'Account updated successfully');
     }
@@ -88,8 +91,11 @@ class AccountController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Account $account)
+    public function destroy(Account $account, Request $request)
     {
+        if($account->user_id != $request->user()->id){
+            throw new AuthorizationException();
+        }
         $account->transactions()->delete();
         $account->delete();
         return $this->sendResponse(null, 'Account and related transactions successfully deleted');
