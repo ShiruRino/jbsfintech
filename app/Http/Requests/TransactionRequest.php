@@ -30,7 +30,7 @@ class TransactionRequest extends BaseRequest
               'amount' => 'required|numeric|min:1',  
               'transaction_date' => 'sometimes|date',  
               'note' => 'sometimes',  
-              'attachment_path' => 'sometimes|files|mimes:jpg,jpeg,png,webp,svg|max:2048',  
+              'attachment_path' => 'sometimes|file|mimes:jpg,jpeg,png,webp,svg|max:2048',  
             ];
         }
         if($this->isMethod('PATCH') || $this->isMethod('PUT')){
@@ -41,7 +41,7 @@ class TransactionRequest extends BaseRequest
               'amount' => 'sometimes|numeric|min:1',  
               'transaction_date' => 'sometimes|date',  
               'note' => 'sometimes',  
-              'attachment_path' => 'sometimes|files|mimes:jpg,jpeg,png,webp,svg|max:2048',  
+              'attachment_path' => 'sometimes|file|mimes:jpg,jpeg,png,webp,svg|max:2048',  
             ];
         }
         return [];
