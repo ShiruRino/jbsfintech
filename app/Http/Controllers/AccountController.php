@@ -71,7 +71,7 @@ class AccountController extends Controller
         }
         $data = [];
         $data['account'] = new AccountResource($account);
-        $data['latest_transactions'] = $account->transactions()->latest()->limit(3);
+        $data['latest_transactions'] = $account->transactions()->latest()->limit(3)->get();
         return $this->sendResponse($data, 'Account retrieved successfully'); 
     }
 
