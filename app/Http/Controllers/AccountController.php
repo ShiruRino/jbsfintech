@@ -39,6 +39,7 @@ class AccountController extends Controller
                         ->where('is_active', true); // remove if transactions has no is_active column
                 },
             ], 'amount')
+            ->orderBy('name')
             ->get();
         $data = AccountResource::collection($accounts);
         return $this->sendResponse($data,'Accounts retrieved successfully');
