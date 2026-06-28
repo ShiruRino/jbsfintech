@@ -38,6 +38,7 @@ class CategoryController extends Controller
             throw new AuthorizationException();
         }
         $data['category'] = new CategoryResource($category);
+        $data['latest_transactions'] = $category->transactions()->where('user_id', $request->user()->id)->latest()->limit(3)->get();
     }
 
     /**
