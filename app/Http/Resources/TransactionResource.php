@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionResource extends JsonResource
 {
@@ -22,7 +23,7 @@ class TransactionResource extends JsonResource
             'amount' => $this->amount,
             'transaction_date' => $this->transaction_date,
             'note' => $this->note,
-            'attachment_path' => $this->attachment_path
+            'attachment_path' => $this->attachment_path ? Storage::url($this->attachment_path) : null,
         ];
     }
 }

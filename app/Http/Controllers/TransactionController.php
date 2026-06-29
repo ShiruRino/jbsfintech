@@ -8,6 +8,9 @@ use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class TransactionController extends Controller
 {
@@ -25,6 +28,11 @@ class TransactionController extends Controller
      */
     public function store(TransactionRequest $request)
     {
+        $path = null;
+        $file = $request->file('attachment');
+        if(!empty($file)){
+            $path = $file->store('transactions', 'public');
+        }
         $transaction = Transaction::create([
             'user_id' => $request->user()->id,
             'account_id' => $request->validated('account_id'),
@@ -33,7 +41,7 @@ class TransactionController extends Controller
             'amount' => $request->validated('amount'),
             'transaction_date' => $request->validated('transaction_date', now()->toDateString()),
             'note' => $request->validated('note', null),
-            'attachment_path' => $request->validated('attachment_path', null),
+            'attachment_path' => $path ?? null,
         ]);
         $transaction->load('account', 'category');
         return $this->sendResponse(new TransactionResource($transaction), 'Transaction added successfully', 201);
@@ -56,12 +64,73 @@ class TransactionController extends Controller
      */
     public function update(TransactionRequest $request, Transaction $transaction)
     {
-        if($transaction->user_id != $request->user()->id){
+        if ((int) $transaction->user_id !== (int) $request->user()->id) {
             throw new AuthorizationException();
         }
-        $transaction->update($request->validated());
+
+        $validated = $request->validated();
+
+        $oldPath = $transaction->attachment_path;
+        $attachmentPath = $oldPath;
+        $newUploadedPath = null;
+
+        try {
+            DB::transaction(function () use (
+                $request,
+                $transaction,
+                $validated,
+                &$attachmentPath,
+                &$newUploadedPath
+            ) {
+                // Upload attachment pengganti bila ada file baru.
+                if ($request->hasFile('attachment')) {
+                    $file = $request->file('attachment');
+
+                    if (!$file->isValid()) {
+                        abort(422, 'Attachment tidak valid.');
+                    }
+
+                    $newUploadedPath = $file->store('transactions', 'public');
+                    $attachmentPath = $newUploadedPath;
+                }
+
+                // Hapus attachment hanya bila frontend mengirim remove_attachment=true.
+                if ($request->boolean('remove_attachment')) {
+                    $attachmentPath = null;
+                }
+
+                $transaction->update([
+                    'account_id' => $validated['account_id'] ?? $transaction->account_id,
+                    'category_id' => $validated['category_id'] ?? $transaction->category_id,
+                    'type' => $validated['type'] ?? $transaction->type,
+                    'amount' => $validated['amount'] ?? $transaction->amount,
+                    'transaction_date' => $validated['transaction_date'] ?? $transaction->transaction_date,
+                    'note' => array_key_exists('note', $validated)
+                        ? $validated['note']
+                        : $transaction->note,
+                    'attachment_path' => $attachmentPath,
+                ]);
+            });
+        } catch (Throwable $e) {
+            // Bersihkan file baru jika proses database gagal.
+            if ($newUploadedPath) {
+                Storage::disk('public')->delete($newUploadedPath);
+            }
+
+            throw $e;
+        }
+
+        // Hapus attachment lama hanya setelah update database sukses.
+        if ($oldPath && $oldPath !== $attachmentPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
         $transaction->load('account', 'category');
-        return $this->sendResponse(new TransactionResource($transaction), 'Transaction updated successfully');
+
+        return $this->sendResponse(
+            new TransactionResource($transaction),
+            'Transaction updated successfully'
+        );
     }
 
     /**
@@ -72,6 +141,7 @@ class TransactionController extends Controller
         if($transaction->user_id != $request->user()->id){
             throw new AuthorizationException();
         }
+        Storage::disk('public')->delete($transaction->attachment_path);
         $transaction->delete();
         return $this->sendResponse(null, 'Transaction deleted successfully');
     }
