@@ -15,7 +15,14 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $categories = $request->user()->categories()->orderBy('name')->get();
+        $categories = $request->user()->categories()
+            ->withSum([
+                'transactions as total' => function ($query){
+                    $query->where('is_active', true);
+                }
+            ])
+            ->orderBy('name')
+            ->get();
         return $this->sendResponse(CategoryResource::collection($categories), 'Categories retrieved successfully');
     }
 

@@ -17,14 +17,6 @@ class AccountController extends Controller
     {
         $accounts = $request->user()
             ->accounts()
-            ->select([
-                'id',
-                'name',
-                'type',
-                'initial_balance',
-                'is_active',
-            ])
-            ->where('is_active', true)
             ->withSum([
                 'transactions as total_income' => function ($query) {
                     $query
